@@ -1,0 +1,79 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > fastqc_v0.11.9.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y wget
+    yum install -y unzip
+
+    yum install -y java-11-openjdk
+    yum install -y xorg-x11-server-Xorg xorg-x11-xauth xorg-x11-utils
+
+    yum install -y perl
+    yum install -y glibc-locale-source glibc-langpack-en
+    localedef -c -f UTF-8 -i en_GB en_GB.UTF-8
+
+    mkdir /software
+    cd /software
+    wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.11.9.zip
+    unzip fastqc_v0.11.9.zip
+
+    chmod 755 /software/FastQC/fastqc
+
+%environment
+    export JAVA_OPTS="-Djava.awt.headless=true"
+    export PATH=/software/FastQC/:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    fastqc \$@
+
+EOF
+
+cat fastqc_v0.11.9.def
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build fastqc_v0.11.9.sif fastqc_v0.11.9.def
+
+
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp fastqc_v0.11.9.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+cd /scratch/c.wptpjg/newQC
+
+FQ1=/scratch/c.wptpjg/newQC/210622_M03759_0186_000000000-DBPBB/S178-Q-001-1_S1_L001_R1_001.fastq.gz
+FQ2=/scratch/c.wptpjg/newQC/210622_M03759_0186_000000000-DBPBB/S178-Q-001-1_S1_L001_R2_001.fastq.gz
+
+module load singularity/3.7.4
+
+singularity run fastqc_v0.11.9.sif fastqc $FQ1
+singularity run fastqc_v0.11.9.sif fastqc $FQ2

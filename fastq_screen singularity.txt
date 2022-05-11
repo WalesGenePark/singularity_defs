@@ -1,0 +1,74 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > fastq_screen-0.14.1.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+    yum search epel-release
+    yum info epel-release
+    yum install -y epel-release
+    yum install -y gzip
+    yum install -y wget
+
+    yum install -y perl
+    yum install -y glibc-locale-source glibc-langpack-en
+    localedef -c -f UTF-8 -i en_GB en_GB.UTF-8
+
+    yum install -y bwa
+    yum install -y samtools
+    yum install -y perl-GDGraph
+
+    mkdir /software
+    cd /software
+    wget https://github.com/StevenWingett/FastQ-Screen/archive/refs/tags/v0.14.1.tar.gz
+    tar -xvpf v0.14.1.tar.gz
+
+
+%environment
+    export PATH=/software/FastQ-Screen-0.14.1:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    fastq_screen \$@
+     
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build fastq_screen-0.14.1.sif fastq_screen-0.14.1.def
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp fastq_screen-0.14.1.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run fastq_screen-0.14.1.sif
+
+
+
+

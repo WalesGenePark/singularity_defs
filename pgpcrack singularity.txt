@@ -1,0 +1,83 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+
+
+NAME=PGPCrack-NG
+VER=v1.0
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+
+    yum -y install dnf-plugins-core
+    yum config-manager --set-enabled powertools
+
+    yum -y install libgcrypt libgpg-error zlib-devel bzip2-libs
+    yum -y install libassuan-devel
+    yum -y install git wget
+    yum -y install gcc make
+    yum -y install  libgpg-error zlib-devel libgcrypt
+
+    mkdir /software
+    cd /software
+
+    # Install PGPCrack-NG
+    git clone https://github.com/kholia/PGPCrack-NG.git
+    cd PGPCrack-NG
+    make
+
+
+
+    # Download password dictionary
+    cd /software
+    wget https://mirrors.edge.kernel.org/openwall/wordlists/all.gz 
+    gunzip all.gz
+    mv all openwall-passwords.txt
+
+%environment
+    export PATH=/software:\$PATH
+
+
+%runscript
+    PGPCrack-NG \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run ${NAME}-${VER}.sif
+
+singularity exec ${NAME}-${VER}.sif gpg2john
+
+singularity shell ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

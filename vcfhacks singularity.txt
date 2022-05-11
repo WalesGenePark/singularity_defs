@@ -1,0 +1,72 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+
+
+NAME=vcfhacks
+VER=v0.2.2a
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+
+
+    yum install -y wget
+    yum install -y tar
+    yum install -y bzip2
+    yum install -y which
+    yum install -y glibc-common
+
+    mkdir /software
+    cd /software
+    wget https://github.com/david-a-parry/vcfhacks/releases/download/v.0.2.2a/vcfhacks_binaries-linux-v0.2.2a.tar.bz2
+    tar -xvpf vcfhacks_binaries-linux-v0.2.2a.tar.bz2
+
+%environment
+    LANGUAGE=en_GB.utf8
+    LC_ALL=en_GB.utf8
+    LANG=en_GB.utf8
+    LC_TYPE=en_GB.utf8
+    export PATH=/software/vcfhacks_binaries-linux-v0.2.2a:\$PATH
+
+
+%runscript
+    annovcfToSimple \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run ${NAME}-${VER}.sif
+
+singularity shell ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+mv ${NAME}-${VER}.* /home/www/containers
+
+
+

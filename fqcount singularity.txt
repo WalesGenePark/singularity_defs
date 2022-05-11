@@ -1,0 +1,57 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd /home/pjg/WGPQC
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+
+
+NAME=fqcount
+VER=v1.0
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%files 
+    /home/pjg/fqcount /software/
+
+%post
+
+    mkdir -p /software
+
+%environment
+    export PATH=/software:\$PATH
+
+%runscript
+    fqcount \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+singularity run ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

@@ -1,0 +1,67 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+
+cd ~
+
+
+# ------------------------------------------------------------------------------
+
+NAME=SigProfiler
+VER=v1.1.4
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    yum install -y python39-devel
+    yum install -y gcc
+    yum install -y gcc-c++
+    yum install -y make
+    yum install -y wget
+    yum install -y unzip
+    yum install -y sed
+
+    ln -s /usr/bin/python3 /usr/bin/python
+
+    pip3 install SigProfilerMatrixGenerator
+    pip3 install SigProfilerExtractor
+    pip3 install SigProfilerSimulator
+    pip3 install SigProfilerPlotting
+
+
+    sed -i "s/install\.log/references\/install\.log/g" /usr/local/lib/python3.9/site-packages/SigProfilerMatrixGenerator/install.py
+    
+
+
+%environment
+    export PATH=/software/gatk-4.2.0.0:\$PATH
+
+%runscript
+    runSPE.py
+
+%labels
+    Maintainer ${FULLNAME}
+    Version ${VER}
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build  ${NAME}-${VER}.sif  ${NAME}-${VER}.def
+
+singularity exec ${NAME}-${VER}.sif grep install.log /usr/local/lib/python3.9/site-packages/SigProfilerMatrixGenerator/install.py
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+mv ${NAME}-${VER}* /home/www/containers
+
+

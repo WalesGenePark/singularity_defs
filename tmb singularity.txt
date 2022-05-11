@@ -1,0 +1,89 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > tmb-v1.3.0.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    yum install -y python39-devel
+    yum install -y gcc-c++
+    yum install -y make
+    yum install -y bzip2 bzip2-devel
+    yum install -y zlib-devel xz-devel 
+    yum install -y --allowerasing libcurl-devel
+    yum install -y openssl-devel
+    yum install -y wget
+    yum install -y unzip
+
+    pip3 install Cython
+    pip3 install pybedtools
+    pip3 install cyvcf2
+    pip3 install pyyaml
+    pip3 install pandas
+
+
+    ln -fs /usr/bin/python3 /usr/bin/python
+
+
+
+    mkdir /software
+    cd /software
+    wget https://github.com/bioinfo-pf-curie/TMB/archive/refs/heads/master.zip
+    unzip master.zip
+
+    chmod +x /software/TMB-master/bin/pyTMB.py
+    chmod +x /software/TMB-master/bin/pyEffGenomeSize.py
+
+%environment
+    export PATH=/software/TMB-master/bin:\$PATH
+
+%runscript
+    pyTMB.py \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build tmb-v1.3.0.sif tmb-v1.3.0.def
+
+singularity shell tmb-v1.3.0.sif
+
+
+
+
+cp tmb-v1.3.0.* /home/www/containers
+
+
+
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run tmb-v1.3.0.sif --help
+
+
+
+# Copy to archive
+# ------------------------------------------------------------------------------
+
+cp tmb-v1.3.0.sif /home/www/containers/
+cp tmb-v1.3.0.def /home/www/containers/

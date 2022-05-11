@@ -1,0 +1,137 @@
+
+
+# Create container
+mkdir -p /scratch/c.wptpjg/pyega3
+cd /scratch/c.wptpjg/pyega3
+
+module load singularity/3.7.4
+singularity pull docker://lvarin/wp4-federated-joint-cohort-analysis:alpine
+mv wp4-federated-joint-cohort-analysis_alpine.sif pyega3.sif
+
+
+# Test runs
+# -----------------------------------------------------------
+
+cd /scratch/c.wptpjg/pyega3
+module load singularity/3.7.4
+
+# List test datasets
+singularity  exec pyega3.sif  pyega3 -d -t datasets
+
+# Test dataset
+singularity  exec pyega3.sif pyega3 -d -t fetch EGAF00001775036 2> EGAF00001775036.out
+
+
+DIR=/gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+cd $DIR
+
+singularity exec --bind $DIR:$DIR  pyega3.sif pyega3 -t  fetch EGAF00001775036 2> EGAF00001775036.out
+
+# Real runs
+# -----------------------------------------------------------
+
+
+DIR=/gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+cd $DIR
+
+module load singularity/3.7.4
+
+# Create credential_file.json
+cat <<EOF > /scratch/$USER/credential_file.json
+{
+    "username": "mcclatcheym1@cardiff.ac.uk",
+    "password": "15_Penguins_17"
+}
+EOF
+
+
+# Real world test
+singularity exec --bind $DIR:$DIR  pyega3.sif pyega3 --config-file /scratch/$USER/credential_file.json --connections 6 fetch EGAF00001055080
+
+
+
+# Real runs
+# -----------------------------------------------------------
+
+DIR=/gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+cd $DIR
+
+# Create credential_file.json
+cat <<EOF > /scratch/$USER/credential_file.json
+{
+    "username": "mcclatcheym1@cardiff.ac.uk",
+    "password": "15_Penguins_17"
+}
+EOF
+
+echo '#!/bin/bash' > download_all.sh
+echo 'cd /gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD' >> download_all.sh
+echo 'module load singularity/3.7.4' >> download_all.sh
+
+for EGAF in `cut -f 4 DDD_mcd_fileset_reference.tsv | sed 1d`
+do
+    echo "singularity exec --bind $DIR:$DIR pyega3.sif pyega3 --config-file /scratch/$USER/credential_file.json --connections 6 fetch $EGAF 2> $EGAF.out " >> download_all.sh
+    echo "mv pyega3_output.log $EGAF.log" >> download_all.sh
+done
+
+
+chmod +x download_all.sh
+nohup ./download_all.sh &
+
+
+for EGAF in `cut -f 4 DDD_mcd_fileset_reference.tsv | sed 1d | sort -r`
+do
+    echo "singularity exec --bind $DIR:$DIR pyega3.sif pyega3 --config-file /scratch/$USER/credential_file.json --connections 10 fetch $EGAF 2> $EGAF.out " >> download_rev.sh
+    echo "mv pyega3_output.log $EGAF.log" >> download_rev.sh
+done
+
+
+chmod +x download_rev.sh
+nohup ./download_rev.sh &
+
+
+
+# Check outputs
+# -----------------------------------------------------------
+
+
+cat <<EOF > check.sh
+#!/bin/bash
+
+COMPLETE=0
+TODO=0
+ERROR=0
+
+cd /gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+
+for EGAF in \`cut -f 4 DDD_mcd_fileset_reference.tsv | sed 1d\`
+do
+    if [ -f \$EGAF.log ]; then
+        OK=\`grep "Download complete" \$EGAF.log | wc -l\`
+        #echo "\$EGAF \$OK"
+        if [ \$OK -gt 0 ]; then
+            COMPLETE=\$((COMPLETE+1)) 
+            #echo "OK: \$EGAF \$OK"  
+        else 
+            ERROR=\$((ERROR+1))   
+            #echo "ERROR: \$EGAF \$OK"  
+        fi
+        
+    else
+        TODO=\$((TODO+1))
+    fi
+
+
+done
+
+echo "Complete: \$COMPLETE"
+echo "Failed: \$ERROR"
+echo "To-Do: \$TODO"
+
+EOF
+
+chmod +x check.sh
+
+
+
+/gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD/check.sh

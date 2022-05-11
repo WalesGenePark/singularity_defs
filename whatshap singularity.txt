@@ -1,0 +1,67 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > whatshap-v1.1.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    yum install -y python39-devel
+    yum install -y gcc-c++
+    yum install -y make
+    yum install -y bzip2 bzip2-devel
+    yum install -y zlib-devel xz-devel 
+    yum install -y --allowerasing libcurl-devel
+    yum install -y openssl-devel
+
+    pip3 install whatshap
+
+%environment
+
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    whatshap \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build whatshap-v1.1.sif whatshap-v1.1.def
+
+singularity run whatshap-v1.1.sif 
+
+cp whatshap-v1.1.sif /home/www/containers/
+cp whatshap-v1.1.def /home/www/containers/
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp multiqc-v1.11.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+cd /scratch/c.wptpjg/newQC
+
+singularity run multiqc-v1.11.sif .ls

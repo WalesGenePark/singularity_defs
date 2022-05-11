@@ -1,0 +1,55 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > bwa-0.7.17.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+    yum search epel-release
+    yum info epel-release
+    yum install -y epel-release
+    yum install -y gzip
+    yum install -y bwa
+
+%environment
+    
+
+%runscript
+    bwa \$@
+
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build bwa-0.7.17.sif bwa-0.7.17.def
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp bwa-0.7.17.* /home/www/containers
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run bwa-0.7.17.sif 

@@ -1,0 +1,59 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > urmap-v1.0.1480.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+    yum install -y git
+    mkdir /software
+    cd /software
+    git clone https://github.com/rcedgar/urmap.git
+
+    chmod +x /software/urmap/bin/urmap
+
+
+%environment
+    export PATH=/software/urmap/bin:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    urmap \$@
+
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build urmap-v1.0.1480.sif urmap-v1.0.1480.def
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp urmap-v1.0.1480.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run urmap-v1.0.1480.sif

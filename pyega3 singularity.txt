@@ -1,0 +1,56 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > pyega3-3.4.1.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    pip3 install pyega3
+
+%environment
+
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build pyega3-3.4.1.sif pyega3-3.4.1.def
+
+
+
+
+
+
+
+
+cp pyega3-3.4.1.sif /gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run pyega3-3.4.1.sif pyega3 --help
+
+DIR=/gluster/wgp/wgp/sequencing/colleagues_data/Andrew_fry/DDD
+singularity shell  --bind $DIR:$DIR pyega3-3.4.1.sif

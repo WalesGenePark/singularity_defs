@@ -1,0 +1,70 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > picard-2.25.6.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y dnf-plugins-core
+    yum config-manager --set-enabled powertools
+
+    yum install -y java-1.8.0-openjdk-devel
+    yum install -y wget
+
+    mkdir /software
+    cd /software
+    wget https://github.com/broadinstitute/picard/releases/download/2.25.6/picard.jar
+
+%environment
+    export PATH=/software/qualimap_v2.2.1:\$PATH
+    export PICARD=/software/picard.jar
+
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    java -jar \$PICARD \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build picard-2.25.6.sif picard-2.25.6.def
+
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp picard-2.25.6.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+cd /scratch/c.wptpjg/newQC
+
+BAM=/scratch/c.wptpjg/R188/STAR-mapping/R188-A-002-1_Aligned.sortedByCoord.out.bam
+
+module load singularity/3.7.4
+singularity run picard-2.25.6.sif -H
+
+singularity run picard-2.25.6.sif BamIndexStats -I $BAM

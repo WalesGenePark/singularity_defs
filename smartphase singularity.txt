@@ -1,0 +1,66 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > smartphase-v1.1.0.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+
+    yum install -y java-11-openjdk-devel
+    yum install -y wget
+    yum install -y git 
+
+    mkdir /software
+    cd /software
+    git clone https://github.com/paulhager/smart-phase.git
+    cd ./smart-phase/
+    bash compile.sh
+
+
+%environment
+    export SMARTPHASE=/software/smart-phase/smartPhase.jar
+
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    java -jar \$SMARTPHASE \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build smartphase-v1.1.0.sif smartphase-v1.1.0.def
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+cd /scratch/c.wptpjg/newQC
+
+
+singularity run smartphase-v1.1.0.sif
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp smartphase-v1.1.0* /home/www/containers
+
+
+
+
