@@ -19,10 +19,15 @@ From: centos:8
 
 %files 
     /home/pjg/WGPQC/QC_map_PE_illumina.pl /software/WGPQC/
-    /home/pjg/WGPQC/QC_map_SE_illumina.pl /software/WGPQC/                                                                                
+    /home/pjg/WGPQC/QC_html_PE_illumina.pl /software/WGPQC/                                                                                
+    /home/pjg/WGPQC/QC_map_SE_illumina.pl /software/WGPQC/  
+    /home/pjg/WGPQC/QC_html_SE_illumina.pl /software/WGPQC/  
     /home/pjg/WGPQC/createIGVLauncher.pl /software/WGPQC/      
     /home/pjg/WGPQC/toHist.pl /software/WGPQC/                                                                      
     /home/pjg/WGPQC/descriptiveStatsAsAline.pl /software/WGPQC/  
+
+    /home/pjg/WGPQC/yieldgraph /software/WGPQC/  
+    /home/pjg/WGPQC/yieldsummary /software/WGPQC/  
 
     /home/pjg/WGPQC/WGP-Toolkit/* /software/WGP-Toolkit/
 
@@ -46,6 +51,16 @@ From: centos:8
     yum install -y unzip
     yum install -y gzip
     yum install -y gnuplot
+
+    yum search epel-release
+    yum info epel-release
+    yum install -y epel-release
+    yum install -y perl-Excel-Writer-XLSX
+
+    yum install -y dnf-plugins-core
+    yum config-manager --set-enabled powertools
+    yum install -y perl-File-Find-Rule 
+    yum install -y perl-List-MoreUtils 
 
 
     # htslib
@@ -102,6 +117,7 @@ From: centos:8
     wget https://github.com/broadinstitute/picard/releases/download/2.25.6/picard.jar
 
 
+
 %environment
     export PATH=/software:\$PATH
     export PATH=/software/WGPQC:\$PATH
@@ -141,6 +157,10 @@ singularity exec ${NAME}-${VER}.sif java -jar /software/picard.jar
 singularity exec ${NAME}-${VER}.sif fastqc
 
 singularity exec ${NAME}-${VER}.sif QC_map_PE_illumina.pl
+
+singularity exec ${NAME}-${VER}.sif QC_html_PE_illumina.pl
+
+singularity exec ${NAME}-${VER}.sif yieldgraph
 
 
 singularity shell ${NAME}-${VER}.sif
