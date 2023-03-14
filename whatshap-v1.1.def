@@ -1,0 +1,25 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    yum install -y python39-devel
+    yum install -y gcc-c++
+    yum install -y make
+    yum install -y bzip2 bzip2-devel
+    yum install -y zlib-devel xz-devel 
+    yum install -y --allowerasing libcurl-devel
+    yum install -y openssl-devel
+
+    pip3 install whatshap
+
+%environment
+
+
+%runscript
+    echo "Container created on 13Jul2021 by Peter Giles"
+    echo "---------------------------------------------------------"
+    whatshap $@
+    

@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: ubuntu:20.04
+Stage: get basics
+
+%labels
+    Version v0.0.1
+
+%post
+export 
+apt-get update && \
+apt-get upgrade -y && \
+apt-get install -y --force-yes wget build-essential curl perl  cpanminus && \
+DEBIAN_FRONTEND=noninteractive TZ=Europe apt-get install -y libextutils-pkgconfig-perl libgd-dev libgd-gd2-perl && \
+apt-get clean -y
+
+cpanm Venn::Chart
+
+%environment
+	export TZ=Europe/London
+	export PERL5LIB=$HOME/perl5/lib/perl5:$PERL5LIB
+
+
+%labels
+	Maintainer I-Perry
+	Version 1

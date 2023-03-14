@@ -1,0 +1,31 @@
+Bootstrap: docker
+From: ubuntu:20.04
+Stage: get basics
+
+%labels
+    Version v0.0.1
+
+%setup
+
+%files
+#./GeoMxNGSPipeline.tgz /tmp/GeoMxNGSPipeline.tgz
+#./GeoMxNGSPipeline_Linux_2.3.3.10.sh /Geomx
+
+%post
+apt-get update && \
+apt-get upgrade -y && \
+apt-get install -y wget systemd && \
+apt-get clean -y
+
+
+mkdir -p /GeoMX
+wget -O /GeoMX/GeoMxNGSPipeline.tgz https://wotan.cardiff.ac.uk/containers/GeoMxNGSPipeline.tgz
+wget -O /GeoMX/GeoMxNGSPipeline_Linux_2.3.3.10.sh https://wotan.cardiff.ac.uk/containers/GeoMxNGSPipeline_Linux_2.3.3.10.sh
+chmod +x /GeoMX/GeoMxNGSPipeline_Linux_2.3.3.10.sh
+cd /GeoMX && echo "\n\n" | ./GeoMxNGSPipeline_Linux_2.3.3.10.sh
+touch /var/GeoMxNGSPipeline/agreement_cli_yes
+/var/GeoMxNGSPipeline/./geomxngspipeline
+
+%environment
+export PATH=$PATH:/var/GeoMxNGSPipeline
+

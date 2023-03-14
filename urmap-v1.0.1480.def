@@ -1,0 +1,21 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+    yum install -y git
+    mkdir /software
+    cd /software
+    git clone https://github.com/rcedgar/urmap.git
+
+    chmod +x /software/urmap/bin/urmap
+
+
+%environment
+    export PATH=//software/urmap/bin:$PATH
+
+%runscript
+    echo "Container created on 08Jul2021 by Peter Giles"
+    echo "---------------------------------------------------------"
+    urmap $@
+

@@ -1,0 +1,48 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+
+    yum -y install wget gpgme
+    yum -y group install "Development Tools"
+    yum install -y openssl-devel
+
+
+    mkdir /software
+    cd /software
+
+    wget https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/p/pgpdump-0.33-1.el7.x86_64.rpm
+    yum -y localinstall pgpdump-0.33-1.el7.x86_64.rpm
+
+    wget https://www.openwall.com/john/k/john-1.9.0-jumbo-1.tar.xz
+    wget https://www.openwall.com/john/k/john-1.9.0-jumbo-1.tar.xz.sign
+    wget https://www.openwall.com/signatures/openwall-signatures.asc
+    gpg --import openwall-signatures.asc
+    #gpg --verify john-1.9.0-jumbo-1.tar.xz.sign
+    
+    tar xvfJ john-1.9.0-jumbo-1.tar.xz
+    cd john-1.9.0-jumbo-1/src
+    ./configure
+    make
+    
+    # Run tests
+    #cd ../run/
+    #./john --test
+
+    # Download password dictionary
+    cd /software
+    wget https://mirrors.edge.kernel.org/openwall/wordlists/all.gz 
+    gunzip all.gz
+    mv all openwall-passwords.txt
+
+%environment
+    export PATH=/software/john-1.9.0-jumbo-1/run/:$PATH
+
+
+%runscript
+    john $@
+    

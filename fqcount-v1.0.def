@@ -1,0 +1,17 @@
+
+Bootstrap: docker
+From: centos:8
+
+%files 
+    /home/pjg/fqcount /software/
+
+%post
+
+    mkdir -p /software
+
+%environment
+    export PATH=/software:$PATH
+
+%runscript
+    fqcount $@
+    

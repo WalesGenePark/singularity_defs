@@ -1,0 +1,47 @@
+
+
+Bootstrap: docker
+From: ubuntu:21.10
+
+%post
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Install all the updates and download dependencies
+apt-get update &&     apt-get install -y     git     wget     bzip2     python     nano     curl     unzip     libssl-dev     libcurl4-openssl-dev     libxml2-dev     lsb-release     phylip     software-properties-common     dirmngr
+
+# Install R 
+wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+apt install -y --no-install-recommends r-base r-base-dev
+
+# Install R libraries
+R -e "install.packages(c('getopt', 'BiocManager'), dependencies=TRUE,  repos='http://cran.rstudio.com/')"
+R -e "BiocManager::install(c('SNPRelate', 'gdsfmt', 'phangorn'))"
+
+
+# Install SNPhylo
+cd /usr/local/bin/
+git clone https://github.com/thlee/SNPhylo.git
+SNPHYLO_HOME="/usr/local/bin/SNPhylo/"
+
+# Install muscle
+mkdir -p SNPhylo/bin
+curl -O http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_i86linux64.tar.gz && tar xf muscle3.8.31_i86linux64.tar.gz -C /usr/local/bin/SNPhylo/bin && ln -sf /usr/local/bin/SNPhylo/bin/muscle3.8.31_i86linux64 /usr/local/bin/SNPhylo/bin/muscle
+
+# Export paths
+export PATH=/home/pjg/.local/bin:/home/pjg/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/dell/srvadmin/sbin:/usr/local/bin/SNPhylo/bin/:/usr/local/bin/SNPhylo:/usr/lib/phylip/bin/:/usr/local/lib/R/site-library
+
+# Run setup
+cd /usr/local/bin/SNPhylo/
+bash setup.sh
+
+
+%environment
+    export SNPHYLO_HOME="/usr/local/bin/SNPhylo/"
+    export PATH=/home/pjg/.local/bin:/home/pjg/bin:/sbin:/bin:/usr/sbin:/usr/bin:/opt/dell/srvadmin/sbin:/usr/local/bin/SNPhylo/bin/:/usr/local/bin/SNPhylo:/usr/lib/phylip/bin/:/usr/local/lib/R/site-library
+
+
+%runscript
+
+    

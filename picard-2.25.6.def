@@ -1,0 +1,26 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y dnf-plugins-core
+    yum config-manager --set-enabled powertools
+
+    yum install -y java-1.8.0-openjdk-devel
+    yum install -y wget
+
+    mkdir /software
+    cd /software
+    wget https://github.com/broadinstitute/picard/releases/download/2.25.6/picard.jar
+
+%environment
+    export PATH=/software/qualimap_v2.2.1:$PATH
+    export PICARD=/software/picard.jar
+
+
+%runscript
+    echo "Container created on 05Jul2021 by Peter Giles"
+    echo "---------------------------------------------------------"
+    java -jar $PICARD $@
+    

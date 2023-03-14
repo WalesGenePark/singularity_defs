@@ -1,0 +1,17 @@
+
+
+Bootstrap: docker
+From: ubuntu:21.10
+
+%post
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Install all the updates and download dependencies
+apt-get update &&     apt-get install -y     nasty     
+
+%environment
+
+%runscript
+
+    

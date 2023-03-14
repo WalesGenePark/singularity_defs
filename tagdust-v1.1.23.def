@@ -1,0 +1,34 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Linux-*
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+
+
+    yum install -y gcc
+    yum install -y make
+    yum install -y wget
+    yum install -y diffutils
+
+    mkdir /software
+    cd /software
+    wget https://sourceforge.net/projects/tagdust/files/tagdust-2.33.tar.gz
+    tar -xvpf tagdust-2.33.tar.gz 
+    cd tagdust-2.33
+    ./configure 
+    make
+    make check
+    make install
+
+
+
+%environment
+    export PATH=/software/tagdust-2.33/bin:$PATH
+
+
+%runscript
+    tagdust $@
+    

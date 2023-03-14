@@ -1,0 +1,71 @@
+Bootstrap: docker
+From: ubuntu:22.04
+Stage: get basics
+
+%labels
+  Maker Iain Perry    
+  R_version v4.2
+  
+%setup
+
+%files
+
+%post
+  export R_VERSION=4.2.1
+  echo "export R_VERSION=${R_VERSION}" >> $SINGULARITY_ENVIRONMENT
+  
+  DEBIAN_FRONTEND=noninteractive
+   TZ=Etc/UTC
+
+  apt-get update &&
+  apt-get install -y --no-install-recommends \
+   locales tzdata
+
+  echo "en_GB.UTF-8 UTF-8" >> /etc/locale.gen
+  locale-gen en_GB.UTF-8
+  /usr/sbin/update-locale LANG=en_GB.UTF-8
+  export LC_ALL=en_GB.UTF-8
+  export LANG=en_GB.UTF-8
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    software-properties-common \
+    dirmngr \
+    cmake \
+    wget
+  wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | \
+    tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+  add-apt-repository \
+    "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
+  apt-get install -y --no-install-recommends \
+    r-base=${R_VERSION}* \
+    r-base-core=${R_VERSION}* \
+    r-base-dev=${R_VERSION}* \
+    r-recommended=${R_VERSION}* \
+    r-base-html=${R_VERSION}* \
+    r-doc-html=${R_VERSION}* \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libcairo2-dev \
+    libxt-dev \
+    libopenblas-dev \
+    libgeos-dev
+
+  echo "options(repos = c(CRAN = 'https://cran.rstudio.com/'), download.file.method = 'libcurl')" >> /usr/lib/R/etc/Rprofile.site
+
+  mkdir -p /library
+  echo "R_LIBS_SITE=/library:\${R_LIBS_SITE}" >> /usr/lib/R/etc/Renviron.site  
+  
+  R --slave -e 'install.packages("BiocManager")'
+  R --slave -e 'BiocManager::install(version="3.15")'
+  R --slave -e 'BiocManager::install("NanoStringNCTools")'
+  R --slave -e 'BiocManager::install("GeomxTools")'
+  R --slave -e 'BiocManager::install("GeoMxWorkflows")'
+
+
+  # Clean-up
+  rm -rf /var/lib/apt/lists/*
+
+%environment
+

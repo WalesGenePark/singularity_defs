@@ -1,0 +1,27 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+
+    yum install -y java-11-openjdk-devel
+    yum install -y wget
+    yum install -y git 
+
+    mkdir /software
+    cd /software
+    git clone https://github.com/paulhager/smart-phase.git
+    cd ./smart-phase/
+    bash compile.sh
+
+
+%environment
+    export SMARTPHASE=/software/smart-phase/smartPhase.jar
+
+
+%runscript
+    echo "Container created on 19Jul2021 by Peter Giles"
+    echo "---------------------------------------------------------"
+    java -jar $SMARTPHASE $@
+    

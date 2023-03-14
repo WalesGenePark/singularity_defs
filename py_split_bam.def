@@ -1,0 +1,17 @@
+Bootstrap: docker
+From: python:3.8-slim
+
+%post
+pip install --no-cache-dir \
+numpy \
+pysam \
+argparse 
+
+
+
+%setup
+touch split_bam.py /bin/split_bam.py
+
+%labels
+    Maintainer IP
+    Version kraken2-v2.0.7

@@ -1,0 +1,17 @@
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    pip3 install pyega3
+
+%environment
+
+
+%runscript
+    echo "Container created on 06Jul2021 by Peter Giles"
+    echo "---------------------------------------------------------"
+    $@
+    
