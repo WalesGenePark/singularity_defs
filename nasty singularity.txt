@@ -1,0 +1,54 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+NAME=nasty
+VER=v0.6-4
+
+cat <<EOF > ${NAME}-${VER}.def
+
+
+Bootstrap: docker
+From: ubuntu:21.10
+
+%post
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Install all the updates and download dependencies
+apt-get update && \
+    apt-get install -y \
+    nasty \
+    
+
+%environment
+
+%runscript
+
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity exec ${NAME}-${VER}.sif nasty
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

@@ -1,0 +1,71 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd /home/pjg/netNES
+
+
+# ------------------------------------------------------------------------------
+
+NAME=netNES
+VER=1.1
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%files 
+    netNES-1.1.Linux.tar.gz /software
+    netNES_sing /software
+
+%post
+
+    yum install -y perl
+    yum install -y perl-App-cpanminus
+
+    cpanm Parallel::ChildManager
+
+    cd /software
+    tar -xvpf netNES-1.1.Linux.tar.gz
+
+    mkdir -p /opt/output
+
+
+%environment
+    export PATH=/software/netNES/:\$PATH
+
+%runscript
+    /software/netNES \$@
+
+EOF
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity shell ${NAME}-${VER}.sif
+
+
+singularity run ${NAME}-${VER}.sif
+
+singularity exec ${NAME}-${VER}.sif cutadapt
+
+
+
+singularity run --bind .:/opt/output ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

@@ -1,0 +1,61 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > bcl2fastq2-v2-20-0.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+    yum install -y wget
+    yum install -y unzip
+
+    mkdir /software
+    cd /software
+    wget https://xoanon.cf.ac.uk/illumina/bcl2fastq2-v2-20-0-linux-x86-64.zip
+    unzip bcl2fastq2-v2-20-0-linux-x86-64.zip
+
+    yum install -y /software/bcl2fastq2-v2.20.0.422-Linux-x86_64.rpm
+
+%environment
+    export PATH=/software:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    bcl2fastq \$@
+
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build bcl2fastq2-v2-20-0.sif bcl2fastq2-v2-20-0.def
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp bcl2fastq2-v2-20-0.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run bcl2fastq2-v2-20-0.sif --help
+
+

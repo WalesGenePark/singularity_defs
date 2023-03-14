@@ -1,0 +1,68 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > duohmm_v0.1.7.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y wget
+    yum install -y make
+
+    # duohmm
+    mkdir /software
+    cd /software
+    wget https://mathgen.stats.ox.ac.uk/genetics_software/duohmm/duohmm_v0.1.7.tar.gz
+    tar -xvpf duohmm_v0.1.7.tar.gz
+    chmod +x /software/duohmm_v0.1.7/duohmm
+
+
+%environment
+    export PATH=/software/duohmm_v0.1.7:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    duohmm \$@
+
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+rm duohmm_v0.1.7.sif
+sudo singularity build duohmm_v0.1.7.sif duohmm_v0.1.7.def
+
+
+#singularity shell duohmm_v0.1.7.sif
+
+singularity run duohmm_v0.1.7.sif
+
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp urmap-v1.0.1480.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run urmap-v1.0.1480.sif

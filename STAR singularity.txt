@@ -1,0 +1,73 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+NAME=STAR
+#VER=2.7.1a
+VER=2.7.9a
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y wget
+    yum install -y gcc-c++
+    yum install -y zlib-devel xz-devel 
+    yum install -y make
+
+
+    mkdir /software
+    cd /software
+    # Get latest STAR source from releases
+    wget https://github.com/alexdobin/STAR/archive/${VER}.tar.gz
+    tar -xzf ${VER}.tar.gz
+    cd STAR-${VER}/source
+
+    make STAR
+
+
+%environment
+    export PATH=/software/STAR-${VER}/bin/Linux_x86_64_static:\$PATH
+
+
+%runscript
+    STAR \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run ${NAME}-${VER}.sif
+
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+
+

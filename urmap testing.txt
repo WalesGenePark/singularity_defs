@@ -1,0 +1,151 @@
+
+
+
+mkdir -p /scratch/$USER/newQC/urmap
+cd /scratch/$USER/newQC/urmap
+
+cp /gluster/wgp/wgp/resources/human/UCSC/hg19/hg19_regular.fasta* .
+
+
+
+
+
+cd /scratch/c.wptpjg/newQC/urmap
+cp /gluster/wgp/wgp/resources/mouse/UCSC/mm10/mm10_regular.fa.gz* .
+gunzip mm10_regular.fa.gz
+
+
+
+
+
+# Index hg19
+# ----------------------------------------------------------------------
+
+interactive -cpus 24
+cd /scratch/$USER/newQC/urmap
+
+URMAP=/scratch/$USER/newQC/urmap-v1.0.1480.sif
+
+module load singularity/3.7.4
+singularity run $URMAP -make_ufi hg19_regular.fasta -output hg19.ufi
+
+singularity run $URMAP -make_ufi mm10_regular.fa -output mm10.ufi
+
+
+singularity run $URMAP -make_ufi  hg19_regular.fasta -output hg19_fast.ufi -veryfast
+
+singularity run $URMAP -make_ufi  mm10_regular.fa -output mm10_fast.ufi -veryfast
+
+# Map using urmap
+# ----------------------------------------------------------------------
+
+FQ1=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+FQ2=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R2_001.fastq.gz
+
+time singularity run $URMAP -map2 $FQ1 -reverse $FQ2 -ufi hg19.ufi -samout R188-A-001-1.sam -threads 20
+
+
+
+
+
+
+00:22 30.1Gb 100% Reading index hg19.ufi
+00:22 30.1Gb Mapping paired /scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+
+              22  Seconds to load index
+            13.5  Minutes in mapper
+      97,934,560  Reads (97.9M)
+          120.8k  Reads/sec. (20 threads)
+      80,136,304  Mapped Q>=10 (81.8%)
+      14,035,933  Mapped Q< 10 (14.3%)
+       3,762,323  Unmapped (3.8%)
+
+13:53 31.4Gb Exiting
+
+
+real	13m57.276s
+user	237m2.888s
+sys	2m33.760s
+
+# Map using urmap - very fast
+# ----------------------------------------------------------------------
+
+FQ1=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+FQ2=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R2_001.fastq.gz
+
+time singularity run $URMAP -map2 $FQ1 -reverse $FQ2 -ufi hg19_fast.ufi -samout R188-A-001-1.sam -threads 20 -veryfast
+
+
+
+
+
+
+00:29 30.1Gb 100% Reading index hg19_fast.ufi
+00:29 30.1Gb Mapping paired /scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+
+              29  Seconds to load index
+             6.6  Minutes in mapper
+      97,934,560  Reads (97.9M)
+          248.6k  Reads/sec. (20 threads)
+      74,665,692  Mapped Q>=10 (76.2%)
+      17,300,425  Mapped Q< 10 (17.7%)
+       5,968,443  Unmapped (6.1%)
+
+07:03 31.4Gb Exiting
+
+
+real	7m7.765s
+user	98m52.411s
+sys	2m38.685s
+
+
+
+
+# Map using bwa
+# ----------------------------------------------------------------------
+
+
+interactive -cpus 24
+
+FQ1=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+FQ2=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R2_001.fastq.gz
+
+BWA=/scratch/$USER/newQC/bwa-0.7.17.sif
+
+cd /scratch/c.wptpjg/gluster/wgp/wgp/resources/human/UCSC/hg19/bwa/basespace/regular
+cp /gluster/wgp/wgp/resources/human/UCSC/hg19/hg19_regular.fasta .
+
+BWAINDEX=/scratch/c.wptpjg/gluster/wgp/wgp/resources/human/UCSC/hg19/bwa/basespace/regular
+
+
+mkdir -p /scratch/$USER/newQC/bwa
+cd /scratch/$USER/newQC/bwa
+
+cp /gluster/wgp/wgp/resources/human/UCSC/hg19/hg19_regular.fasta .
+
+
+BWA=/scratch/$USER/newQC/bwa-0.7.17.sif
+BWAINDEX=/scratch/c.wptpjg/newQC/bwa/hg19_regular.fasta
+module load singularity/3.7.4
+time singularity run $BWA index hg19_regular.fasta
+
+
+module load singularity/3.7.4
+BWA=/scratch/$USER/newQC/bwa-0.7.17.sif
+BWAINDEX=/scratch/c.wptpjg/newQC/bwa/hg19_regular.fasta
+
+FQ1=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R1_001.fastq.gz
+FQ2=/scratch/c.wptpjg/gluster/wgp/wgp/sequencing/illumina/novaseq/210318_A00748_0090_AH2TJ5DRXY/fastq_files/R188/R188-A-001-1_S7_L001_R2_001.fastq.gz
+
+time singularity run $BWA mem -t 24 $BWAINDEX $FQ1 $FQ2 > R188-A-001-1.sam
+
+
+#real	15m11.784s
+#user	307m59.285s
+#sys	5m53.806s
+
+
+#The Ultra-fast Read Mapper (URMAP) is ~10x faster than BWA with comparable accuracy on benchmark tests. URMAP offers faster options when when very high accuracy is not essential. In such applications, speeds ~20x #faster than BWA can be achieved (up to ~1M reads per second on a 24-core server).
+
+
+

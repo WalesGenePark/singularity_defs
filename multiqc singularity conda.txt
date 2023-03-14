@@ -1,0 +1,61 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+NAME=multiqc
+VER=v1.11
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: continuumio/miniconda3
+
+%post
+   
+    conda create --name py37 python=3.7
+    . /opt/conda/etc/profile.d/conda.sh
+
+    conda activate py37 
+    conda install -c bioconda multiqc 
+
+
+%environment
+
+    export PATH=/miniconda3/bin:$PATH
+
+
+%runscript
+    multiqc \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run ${NAME}-${VER}.sif
+
+
+
+singularity shell ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

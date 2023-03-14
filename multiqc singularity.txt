@@ -1,0 +1,65 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+
+
+NAME=multiqc
+VER=v1.11
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y python39
+    pip3 install multiqc
+
+    #yum install -y git
+    #pip3 install --upgrade --force-reinstall git+https://github.com/ewels/MultiQC.git
+
+    cd /usr/local/bin
+    ln -s /usr/bin/python3 python
+
+%environment
+    export PYTHONNOUSERSITE=1
+    export PATH=/usr/local/bin:\$PATH
+
+
+%runscript
+    multiqc \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity run ${NAME}-${VER}.sif
+
+
+
+singularity shell ${NAME}-${VER}.sif
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+

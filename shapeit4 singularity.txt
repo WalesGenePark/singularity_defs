@@ -1,0 +1,103 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+cat <<EOF > shapeit4-v4.2.1.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    #yum groupinstall -y "Development Tools"
+    yum install -y wget
+    yum install -y make
+
+    # boost
+    yum install -y dnf-plugins-core
+    yum config-manager --set-enabled powertools
+    yum install -y boost-static
+
+    # htslib
+    yum install -y bzip2 bzip2-devel
+    yum install -y zlib-devel xz-devel 
+    yum install -y --allowerasing libcurl-devel
+    yum install -y openssl-devel
+    mkdir /software
+    cd /software
+    wget https://github.com/samtools/htslib/releases/download/1.13/htslib-1.13.tar.bz2
+    tar -xvpf htslib-1.13.tar.bz2
+    cd htslib-1.13
+    ./configure --prefix=/usr/local
+    make
+    make install
+
+
+    # shapeit4
+    yum install -y gcc-c++
+
+
+    cd /software
+    wget https://github.com/odelaneau/shapeit4/archive/refs/tags/v4.2.1.tar.gz
+    tar -xvpf v4.2.1.tar.gz
+
+    cd /software/shapeit4-4.2.1/
+    sed -i "s#HTSLIB_INC=.*#HTSLIB_INC=/usr/local/lib#" makefile
+    sed -i "s#HTSLIB_LIB=.*#HTSLIB_LIB=/usr/local/lib/libhts.a#" makefile
+    sed -i "s#BOOST_INC=.*#BOOST_INC=/usr/lib64/#" makefile
+    sed -i "s#BOOST_LIB_IO=.*#BOOST_LIB_IO=/usr/lib64/libboost_iostreams.a#" makefile
+    sed -i "s#BOOST_LIB_PO=.*#BOOST_LIB_PO=/usr/lib64/libboost_program_options.a#" makefile
+    make
+
+
+
+
+
+%environment
+    export PATH=/software/shapeit4-4.2.1/bin:\$PATH
+
+%runscript
+    echo "Container created on $DATE by $FULLNAME"
+    echo "---------------------------------------------------------"
+    shapeit4.2 \$@
+
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+rm shapeit4-v4.2.1.sif
+sudo singularity build shapeit4-v4.2.1.sif shapeit4-v4.2.1.def
+
+
+#singularity shell shapeit4-v4.2.1.sif
+
+singularity run shapeit4-v4.2.1.sif 
+
+
+
+# Copy to ARCCA
+# ------------------------------------------------------------------------------
+
+scp urmap-v1.0.1480.sif c.wptpjg@hawklogin.cf.ac.uk:/scratch/c.wptpjg/newQC
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+
+cd /scratch/c.wptpjg/newQC
+
+module load singularity/3.7.4
+singularity run urmap-v1.0.1480.sif

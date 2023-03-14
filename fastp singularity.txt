@@ -1,0 +1,97 @@
+# Change to build directory
+# ------------------------------------------------------------------------------
+
+cd ~
+
+
+# Create singularity definition file
+# ------------------------------------------------------------------------------
+
+DATE=`date '+%d%b%Y'`
+USER=`whoami`
+FULLNAME=`getent passwd $USER | cut -d: -f5`
+
+NAME=fastp
+VER=v0.23.1
+
+cat <<EOF > ${NAME}-${VER}.def
+
+Bootstrap: docker
+From: centos:8
+
+%post
+
+    yum install -y wget
+    yum install -y gcc-c++
+    yum install -y zlib-devel xz-devel 
+    yum install -y make
+    yum install -y autoconf
+    yum install -y automake
+    yum install -y libtool
+    dnf --enablerepo=powertools install -y nasm
+    dnf --enablerepo=powertools install -y  yasm
+    yum install -y git
+
+    mkdir /software
+
+    cd /software
+    git clone https://github.com/intel/isa-l.git
+    cd isa-l
+    ./autogen.sh
+    ./configure --prefix=/usr --libdir=/usr/lib64
+    make
+    make install
+
+
+    cd /software
+    git clone https://github.com/ebiggers/libdeflate.git
+    cd libdeflate
+    make
+    make install
+
+    cd /software
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+    LDFLAGS="-L/usr/local/lib"
+    git clone https://github.com/OpenGene/fastp.git
+    cd fastp
+    make
+    make install
+
+
+%environment
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+
+
+%runscript
+    fastp \$@
+    
+EOF
+
+
+# Build container
+# ------------------------------------------------------------------------------
+
+sudo singularity build ${NAME}-${VER}.sif ${NAME}-${VER}.def
+
+
+
+
+# Test
+# ------------------------------------------------------------------------------
+
+singularity shell ${NAME}-${VER}.sif
+
+
+singularity run ${NAME}-${VER}.sif
+
+
+
+
+# Copy to library
+# ------------------------------------------------------------------------------
+
+cp ${NAME}-${VER}.* /home/www/containers
+
+
+
+
